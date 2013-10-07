@@ -50,7 +50,10 @@ class Polygon:
 		self.edges = edges
 
 	def contains_point(self, point):
-		return set(self.points).contains(point)
+		return point in set(self.points)
+
+	def contains_edge(self, edge):
+		return edge in set(self.edges)
 
 
 # Returns a list of vertices and edges forming a visibility graph
@@ -89,11 +92,11 @@ def visible_vertices(point, polygons, start, goal):
 	# Set of all points that could potentially be reached
 	points = set([])
 	for polygon in polygons:
-		if not polygon.contains(point):
-			for vertex in polygon.points:
-				points.add(vertex)
+		for vertex in polygon.points:
+			points.add(vertex)
 	points.add(start)
 	points.add(goal)
+	points.remove(point)
 	points = list(points)
 
 	# Sorts points by angle from x-axis with point as origin
@@ -133,6 +136,15 @@ def visible_vertices(point, polygons, start, goal):
 				if (not edge.contains(point)) and counterclockwise(point, edge, next_point):
 					open_edges.append(edge)
 			open_edges.sort(key = lambda e: edge_distance(point, next_point, e))
+
+	for polygon in polygons:
+		if polygon.contains_point(point):
+			for p in polygon.points:
+				if not polygon.contains_edge(Edge(point, p)):
+					try:
+						visible.remove(p)
+					except ValueError:
+						pass
 
 	return visible
 
