@@ -10,8 +10,14 @@ class Edge:
 				return True
 		return False
 
-	def __eq__(e):
+	def __eq__(self, e):
 		return set(self.points) == set(e.points)
+
+	def __hash__(self):
+		hash = 0
+		for point in self.points:
+			hash += point.__hash__()
+		return hash
 
 
 class Point:
@@ -21,6 +27,9 @@ class Point:
 
 	def __eq__(self, p):
 		return self.x == p.x and self.y == p.y
+
+	def __hash__(self):
+		return self.x.__hash__() + self.y.__hash__()
 
 
 class Polygon:
@@ -68,7 +77,7 @@ def visible_vertices(point, polygons, start, goal):
 		for vertex in polygon.points:
 			points.add(vertex)
 	points.add(start)
-	points.add(end)
+	points.add(goal)
 	points.remove(point)
 	points = list(points)
 
@@ -78,15 +87,15 @@ def visible_vertices(point, polygons, start, goal):
 	# Finds all edges in polygons
 	all_edges = set([])
 	for polygon in polygons:
-		for edge in polegon.edges:
+		for edge in polygon.edges:
 			all_edges.add(edge)
 
 	# Initializes edge set and adds edges to first point
 	# Edges with first point will be removed, no need to account
 	open_edges = []
-	for edge in all_edges
+	for edge in all_edges:
 		if edge_intersect(point, points[0], edge):
-			open_edges.add(edge)
+			open_edges.append(edge)
 	open_edges.sort(key = lambda e: edge_distance(point, points[0], e))
 
 
@@ -99,9 +108,12 @@ def visible_vertices(point, polygons, start, goal):
 		# Would save looking through all edges
 		for edge in all_edges:
 			if edge.contains(next_point):
-				open_edges.remove(edge)
-		if euclidean_distance(point, next_point) <= edge_distance(point, next_point, open_edges[0]):
-			visible.add(next_point)
+				try:
+					open_edges.remove(edge)
+				except ValueError:
+					pass
+		if len(open_edges) == 0 or euclidean_distance(point, next_point) <= edge_distance(point, next_point, open_edges[0]):
+			visible.append(next_point)
 		for edge in all_edges:
 			if edge.contains(next_point):
 				if counterclockwise(point, edge, next_point):
@@ -145,6 +157,11 @@ def angle(center, point):
 # Returns true if edge is intersected by the line passing through the given points
 # Currently does not handle if an endpoint is on the line
 def edge_intersect(point1, point2, edge):
+	if point1.x == point2.x:
+		x1_left = edge.points[0].x < point1.x
+		x2_left = edge.points[1].x < point1.x
+		return not (x1_left == x2_left)
+
 	slope = (point1.y - point2.y) / (point1.x - point2.x)
 
 	y1_ex = slope * (edge.points[0].x - point1.x) + point1.y
@@ -162,8 +179,29 @@ def edge_intersect(point1, point2, edge):
 # Returns the distance from a point to an edge along the line to another point
 # If the intersect is not within the edge, won't return a valid distance. So don't do that.
 def edge_distance(point, other_point, edge):
+	if edge.points[0].x == edge.points[1].x:
+		if point.x == other_point.x:
+			# Bad input, no intersection
+			return 0
+		points_slope = (point.y - other_point.y) / (point.x - other_point.x)
+		intersect_x = edge.points[0].x
+		intersect_y = points_slope * (intersect_x - point.x) + point.y
+		intersect = Point(intersect_x, intersect_y)
+		return euclidean_distance(intersect, point)
+
+	if point.x == other_point.x:
+		edge_slope = (edge.points[0].y - edge.points[1].y) / (edge.points[0].x - edge.points[1].x)
+		intersect_x = point.x
+		intersect_y = edge_slope * (intersect_x - edge.points[0].x) + edge.points[0].y
+		intersect = Point(intersect_x, intersect_y)
+		return euclidean_distance(intersect, point)
+
 	edge_slope = (edge.points[0].y - edge.points[1].y) / (edge.points[0].x - edge.points[1].x)
 	points_slope = (point.y - other_point.y) / (point.x - other_point.x)
+
+	if edge_slope == points_slope:
+		# Bad input, no intersection
+		return 0
 
 	intersect_x = (edge_slope * edge.points[0].x - points_slope * point.x + point.y - edge.points[0].y) / (edge_slope - points_slope)
 	intersect_y = edge_slope * (intersect_x - edge.points[0].x) + edge.points[0].y
