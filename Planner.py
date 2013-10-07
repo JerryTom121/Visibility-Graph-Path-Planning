@@ -59,9 +59,7 @@ def visible_vertices(point, polygons, start, goal):
 	# 	If point is on the nearest edge:
 	# 		Add point to W
 	# 	Remove edges from E that are clockwise from point
-	# 		(These are equivalent to edges that touch point and are in E)
 	# 	Add edges to E that are counterclockwise from point
-	# 		(These are equivalent to edges that touch point and are not in E)
 	# Return W
 
 	# Set of all points that could potentially be reached
@@ -84,12 +82,12 @@ def visible_vertices(point, polygons, start, goal):
 			all_edges.add(edge)
 
 	# Initializes edge set and adds edges to first point
-	# TODO: Need to check edges including first point
+	# Edges with first point will be removed, no need to account
 	open_edges = []
 	for edge in all_edges
 		if edge_intersect(point, points[0], edge):
 			open_edges.add(edge)
-	open_edges.sort(key = lambda e: edge_distance(point, e))
+	open_edges.sort(key = lambda e: edge_distance(point, points[0], e))
 
 
 	# Points list for visible vertices
@@ -102,14 +100,15 @@ def visible_vertices(point, polygons, start, goal):
 		for edge in all_edges:
 			if edge.contains(next_point):
 				open_edges.remove(edge)
-		if euclidean_distance(point, next_point) <= edge_distance(point, open_edges[0]):
+		if euclidean_distance(point, next_point) <= edge_distance(point, next_point, open_edges[0]):
 			visible.add(next_point)
-		# Add counterclockwise edges from next_point
+		for edge in all_edges:
+			if edge.contains(next_point):
+				if counterclockwise(point, edge, next_point):
+					open_edges.append(edge)
+			open_edges.sort(key = lambda e: edge_distance(point, next_point, e))
 
-
-
-
-	return []
+	return visible
 
 
 # Computes euclidian distance
@@ -160,23 +159,32 @@ def edge_intersect(point1, point2, edge):
 	return not (y1_below == y2_below)
 
 
-# Returns the closest distance from a point to an edge
-# TODO: Rethink this. May need to do it along a single line.
-def edge_distance(point, edge):
-	slope = (edge.points[0].y - edge.points[1].y) / (edge.points[0].x - edge.points[1].x)
-	perp_slope = - 1 / slope
+# Returns the distance from a point to an edge along the line to another point
+# If the intersect is not within the edge, won't return a valid distance. So don't do that.
+def edge_distance(point, other_point, edge):
+	edge_slope = (edge.points[0].y - edge.points[1].y) / (edge.points[0].x - edge.points[1].x)
+	points_slope = (point.y - other_point.y) / (point.x - other_point.x)
 
-	intersect_x = (slope * edge.points[0].x - perp_slope * point.x + point.y - edge.points[0].y) / (slope - perp_slope)
-	intersect_y = slope * (intersect_x - edge.points[0].x) + edge.points[0].y
+	intersect_x = (edge_slope * edge.points[0].x - points_slope * point.x + point.y - edge.points[0].y) / (edge_slope - points_slope)
+	intersect_y = edge_slope * (intersect_x - edge.points[0].x) + edge.points[0].y
 
 	intersect = Point(intersect_x, intersect_y)
 
-	# If intersect within edge, return distance from point to edge
-	if (intersect_x <= edge.points[0].x and intersect_x >= edge.points[1].x) or (intersect_x <= edge.points[1].x and intersect_x >= edge.points[0].x):
-		return euclidean_distance(intersect, point)
-
-	# If intersect not within edge, return distance to nearest endpoint
-	return min(euclidean_distance(edge.points[0], point), euclidean_distance(edge.points[1], point))
+	return euclidean_distance(intersect, point)
 
 
-# We also need to account for edges not cutting accross the interior of shapes
+# Returns true if the edge goes counterclockwise from the linethrough point and endpoint
+# Only use if endpoint is an endpoint in edge
+def counterclockwise(point, edge, endpoint):
+	if edge.points[0] == endpoint:
+		angle_diff = angle(point, edge.points[1]) - angle(point, endpoint)
+	else:
+		angle_diff = angle(point, edge.points[0]) - angle(point, endpoint)
+
+	if angle_diff < 0:
+		angle_diff += 2 * math.pi
+
+	return angle_diff < math.pi
+
+
+# TODO: We also need to account for edges not cutting accross the interior of shapes
