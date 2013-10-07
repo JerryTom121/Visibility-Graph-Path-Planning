@@ -1,5 +1,17 @@
 import math
 
+def point_string(point):
+	l = [ "(", str(point.x), ", ", str(point.y), ")" ]
+	s = ""
+	for i in l:
+		s += i
+	return s
+
+
+def edge_string(edge):
+	return point_string(edge.points[0]) + " to " + point_string(edge.points[1])
+
+
 class Edge:
 	def __init__(self, point1, point2):
 		self.points = (point1, point2)
@@ -59,6 +71,8 @@ def visibility_graph(polygons, start, goal):
 
 # Returns a list of edges from point to other visible points
 def visible_vertices(point, polygons, start, goal):
+	print "POINT: " + point_string(point) 
+
 	# Compute angles for each point in polygons
 	# Sort points by angle from x-axis, closer points first in ties
 	# Create edge list E
@@ -84,6 +98,12 @@ def visible_vertices(point, polygons, start, goal):
 	# Sorts points by angle from x-axis with point as origin
 	points.sort(key = lambda p: angle(point, p))
 
+	print len(points)
+
+	# for p in points:
+	# 	print point_string(p)
+	# print
+
 	# Finds all edges in polygons
 	all_edges = set([])
 	for polygon in polygons:
@@ -98,6 +118,8 @@ def visible_vertices(point, polygons, start, goal):
 			open_edges.append(edge)
 	open_edges.sort(key = lambda e: edge_distance(point, points[0], e))
 
+	for edge in open_edges:
+		print "ADD" + edge_string(edge)
 
 	# Points list for visible vertices
 	visible = []
@@ -110,16 +132,20 @@ def visible_vertices(point, polygons, start, goal):
 			if edge.contains(next_point):
 				try:
 					open_edges.remove(edge)
+					print "REMOVE" + edge_string(edge)
 				except ValueError:
 					pass
+		print point_string(next_point)
 		if len(open_edges) == 0 or euclidean_distance(point, next_point) <= edge_distance(point, next_point, open_edges[0]):
 			visible.append(next_point)
 		for edge in all_edges:
 			if edge.contains(next_point):
-				if counterclockwise(point, edge, next_point):
+				if (not edge.contains(point)) and counterclockwise(point, edge, next_point):
 					open_edges.append(edge)
+					print "ADD" + edge_string(edge)
 			open_edges.sort(key = lambda e: edge_distance(point, next_point, e))
 
+	print
 	return visible
 
 
@@ -155,8 +181,11 @@ def angle(center, point):
 
 
 # Returns true if edge is intersected by the line passing through the given points
-# Currently does not handle if an endpoint is on the line
+# Considered false if the edge contains either point
 def edge_intersect(point1, point2, edge):
+	if edge.contains(point1) or edge.contains(point2):
+		return False
+
 	if point1.x == point2.x:
 		x1_left = edge.points[0].x < point1.x
 		x2_left = edge.points[1].x < point1.x

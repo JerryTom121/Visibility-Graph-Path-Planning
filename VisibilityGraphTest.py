@@ -2,17 +2,8 @@ from Planner import Point
 from Planner import Edge
 from Planner import Polygon
 from Planner import visibility_graph
-
-
-def pointString(point):
-	l = [ "(", str(point.x), ", ", str(point.y), ")" ]
-	s = ""
-	for i in l:
-		s += i
-	return s
-
-def edgeString(edge):
-	return pointString(edge.points[0]) + " to " + pointString(edge.points[1])
+from Planner import point_string
+from Planner import edge_string
 
 
 start = Point(0.0, 5.0)
@@ -35,7 +26,7 @@ rect = Polygon(point_list, edge_list)
 graph = visibility_graph([rect], start, goal)
 
 for vertex in graph[0]:
-	print pointString(vertex)
+	print point_string(vertex)
 
 for edge in graph[1]:
-	print edgeString(edge)
+	print edge_string(edge)
