@@ -49,6 +49,9 @@ class Polygon:
 		self.points = points
 		self.edges = edges
 
+	def contains_point(self, point):
+		return set(self.points).contains(point)
+
 
 # Returns a list of vertices and edges forming a visibility graph
 def visibility_graph(polygons, start, goal):
@@ -71,8 +74,6 @@ def visibility_graph(polygons, start, goal):
 
 # Returns a list of edges from point to other visible points
 def visible_vertices(point, polygons, start, goal):
-	print "POINT: " + point_string(point) 
-
 	# Compute angles for each point in polygons
 	# Sort points by angle from x-axis, closer points first in ties
 	# Create edge list E
@@ -88,21 +89,15 @@ def visible_vertices(point, polygons, start, goal):
 	# Set of all points that could potentially be reached
 	points = set([])
 	for polygon in polygons:
-		for vertex in polygon.points:
-			points.add(vertex)
+		if not polygon.contains(point):
+			for vertex in polygon.points:
+				points.add(vertex)
 	points.add(start)
 	points.add(goal)
-	points.remove(point)
 	points = list(points)
 
 	# Sorts points by angle from x-axis with point as origin
 	points.sort(key = lambda p: angle(point, p))
-
-	print len(points)
-
-	# for p in points:
-	# 	print point_string(p)
-	# print
 
 	# Finds all edges in polygons
 	all_edges = set([])
@@ -118,9 +113,6 @@ def visible_vertices(point, polygons, start, goal):
 			open_edges.append(edge)
 	open_edges.sort(key = lambda e: edge_distance(point, points[0], e))
 
-	for edge in open_edges:
-		print "ADD" + edge_string(edge)
-
 	# Points list for visible vertices
 	visible = []
 
@@ -132,20 +124,16 @@ def visible_vertices(point, polygons, start, goal):
 			if edge.contains(next_point):
 				try:
 					open_edges.remove(edge)
-					print "REMOVE" + edge_string(edge)
 				except ValueError:
 					pass
-		print point_string(next_point)
 		if len(open_edges) == 0 or euclidean_distance(point, next_point) <= edge_distance(point, next_point, open_edges[0]):
 			visible.append(next_point)
 		for edge in all_edges:
 			if edge.contains(next_point):
 				if (not edge.contains(point)) and counterclockwise(point, edge, next_point):
 					open_edges.append(edge)
-					print "ADD" + edge_string(edge)
 			open_edges.sort(key = lambda e: edge_distance(point, next_point, e))
 
-	print
 	return visible
 
 
