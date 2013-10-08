@@ -57,7 +57,9 @@ class Polygon:
 
 
 # Returns a list of vertices and edges forming a visibility graph
-def visibility_graph(polygons, start, goal):
+def visibility_graph(polygons, start, goal, width = 0):
+	polygons = polygon_expansion(polygons, width)
+
 	vertices = set([])
 	edges = set([])
 
@@ -72,7 +74,39 @@ def visibility_graph(polygons, start, goal):
 		for other in visible_vertices(vertex, polygons, start, goal):
 			edges.add(Edge(vertex, other))
 
-	return (vertices, edges)
+	graph = (vertices, edges)
+
+	interior_points = find_interior_points(graph, polygons)
+	graph = remove_points_from_graph(graph, interior_points)
+
+	concave_points = find_concave_points(graph, polygons)
+	graph = remove_points_from_graph(graph, concave_points)
+
+	return graph
+
+
+# Expands all polygons by the given width
+def polygon_expansion(polygons, width):
+	# TODO
+	return polygons
+
+
+# Removes points and edges including those points, returns the new graph
+def remove_points_from_graph(graph, points):
+	# TODO
+	return graph
+
+
+# Returns a list of all points in the graph that lie within any of the polygons
+def find_interior_points(graph, polygons):
+	# TODO
+	return []
+
+
+# Returns a list of all points in the graph that are concave
+def find_concave_points(graph, polygons):
+	# TODO
+	return []
 
 
 # Returns a list of edges from point to other visible points
@@ -137,6 +171,7 @@ def visible_vertices(point, polygons, start, goal):
 					open_edges.append(edge)
 			open_edges.sort(key = lambda e: edge_distance(point, next_point, e))
 
+	# Remove edges that cross through polygons
 	for polygon in polygons:
 		if polygon.contains_point(point):
 			for p in polygon.points:
