@@ -308,6 +308,3 @@ def counterclockwise(point, edge, endpoint):
 		angle_diff += 2 * math.pi
 
 	return angle_diff < math.pi
-
-
-# TODO: We also need to account for edges not cutting accross the interior of shapes
