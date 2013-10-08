@@ -97,10 +97,31 @@ def remove_points_from_graph(graph, points):
 	return graph
 
 
-# Returns a list of all points in the graph that lie within any of the polygons
+# Returns a set of all points in the graph that lie within any of the polygons
 def find_interior_points(graph, polygons):
-	# TODO
-	return []
+	interior_vertices = set([])
+	for vertex in graph[0]:
+		for polygon in polygons:
+			intersect_count = 0
+			for edge in polygon.edges:
+				if edge_intersect(vertex, Point(vertex.x + 10, vertex.y), edge):
+					if edge.points[0].x == edge.points[1].x:
+						if edge.points[0].x > vertex.x:
+							intersect_count += 1
+					else:
+						slope = (edge.points[0].y - edge.points[1].y) / (edge.points[0].x - edge.points[1].x)
+						x = edge.points[0].x - edge.points[0].y / slope
+						if x > vertex.x:
+							intersect_count += 1
+			for point in polygon.points:
+				if point.y == vertex.y:
+					for edge in polygon.edges:
+						if edge.contains(point):
+							if not counterclockwise(vertex, edge, point):
+								intersect_count += 1
+			if intersect_count % 2:
+				interior_vertices.add(vertex)
+	return interior_vertices
 
 
 # Returns a list of all points in the graph that are concave
@@ -275,7 +296,7 @@ def edge_distance(point, other_point, edge):
 	return euclidean_distance(intersect, point)
 
 
-# Returns true if the edge goes counterclockwise from the linethrough point and endpoint
+# Returns true if the edge goes counterclockwise from the line through point and endpoint
 # Only use if endpoint is an endpoint in edge
 def counterclockwise(point, edge, endpoint):
 	if edge.points[0] == endpoint:
