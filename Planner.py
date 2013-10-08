@@ -94,7 +94,17 @@ def polygon_expansion(polygons, width):
 # Removes points and edges including those points, returns the new graph
 def remove_points_from_graph(graph, points):
 	# TODO
-	return graph
+	vertices = graph[0]
+	edges = graph[1]
+
+	for point in points:
+		if point in vertices:
+			vertices.remove(point)
+		for edge in edges:
+			if edge.contains(point):
+				edges.remove(edge)
+	newGraph = (vertices, edges)
+	return newGraph
 
 
 # Returns a list of all points in the graph that lie within any of the polygons
